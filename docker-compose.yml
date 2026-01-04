@@ -25,6 +25,10 @@ services:
     stdin_open: true
     environment:
       - RAILS_ENV=development
+    networks:
+      default:
+        aliases:
+          - api  # backサービスに「api」という別名を追加
   front:
     build:
       context: ./frontend/
@@ -35,5 +39,9 @@ services:
     command: yarn dev -p 4000
     ports:
       - "8000:4000"
+    environment:
+      - API_URL=http://api:3000
+    depends_on:
+      - back
 volumes:
   mysql_data:

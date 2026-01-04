@@ -34,7 +34,7 @@ module App
     config.active_record.default_timezone = :local
     config.i18n.default_locale = :ja
 
-    # 許可するホスト名を追加
+    # 許可するホスト名を追加（Docker内部ネットワーク用）
     config.hosts << "api"
   end
 end
