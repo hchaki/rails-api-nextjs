@@ -7,12 +7,14 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 ## 技術スタック
 
 ### バックエンド
+
 - Ruby 3.2.6
 - Rails 8.1.1 (API モード)
 - MySQL 8.0
 - Puma
 
 ### フロントエンド
+
 - Next.js 16.1.1
 - React 19.2.3
 - TypeScript
@@ -21,6 +23,7 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 - Yarn
 
 ### インフラ
+
 - Docker & Docker Compose
 - MySQL (永続化ボリューム使用)
 
@@ -56,12 +59,14 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 ### 初回セットアップ手順
 
 1. **リポジトリのクローン**
+
 ```bash
 git clone <repository-url>
 cd rails_api_nextjs
 ```
 
 2. **バックエンドのセットアップ**
+
 ```bash
 # Dockerイメージのビルド
 docker compose build back
@@ -74,6 +79,7 @@ docker compose run --rm back rails db:migrate
 ```
 
 3. **フロントエンドのセットアップ**
+
 ```bash
 # Dockerイメージのビルド
 docker compose build front
@@ -89,11 +95,13 @@ docker compose build front
 ### 開発サーバーの起動
 
 全サービスを一括起動：
+
 ```bash
 docker compose up
 ```
 
 バックグラウンドで起動：
+
 ```bash
 docker compose up -d
 ```
@@ -107,28 +115,33 @@ docker compose up -d
 ### 個別のサービス起動
 
 バックエンドのみ：
+
 ```bash
 docker compose up back
 ```
 
 フロントエンドのみ：
+
 ```bash
 docker compose up front
 ```
 
 ### コンテナ内でコマンド実行
 
-Railsコンソール：
+Rails コンソール：
+
 ```bash
 docker compose run --rm back rails console
 ```
 
 マイグレーション作成：
+
 ```bash
 docker compose run --rm back rails g migration CreateUsers
 ```
 
-Yarnコマンド実行：
+Yarn コマンド実行：
+
 ```bash
 docker compose run --rm front yarn add <package-name>
 ```
@@ -140,6 +153,7 @@ docker compose down
 ```
 
 データベースも含めて完全に削除：
+
 ```bash
 docker compose down -v
 ```
@@ -151,7 +165,7 @@ docker compose down -v
 - データベース名: `llpp_db`
 - ユーザー名: `user`
 - パスワード: `password`
-- ホスト: `db` (Docker内部ネットワーク)
+- ホスト: `db` (Docker 内部ネットワーク)
 
 設定ファイル: `backend/config/database.yml`
 
@@ -165,29 +179,32 @@ docker compose down -v
 services:
   back:
     ports:
-      - "3003:3000"  # 左側を変更
+      - "3003:3000" # 左側を変更
   front:
     ports:
-      - "8000:4000"  # 左側を変更
+      - "8000:4000" # 左側を変更
 ```
 
 ### データベース接続エラー
 
-1. DBコンテナが起動しているか確認：
+1. DB コンテナが起動しているか確認：
+
 ```bash
 docker compose ps
 ```
 
 2. データベースを再作成：
+
 ```bash
 docker compose down -v
 docker compose up -d db
 docker compose run --rm back rails db:create
 ```
 
-### Dockerイメージの再ビルド
+### Docker イメージの再ビルド
 
 キャッシュを使わずに完全再ビルド：
+
 ```bash
 docker compose build --no-cache
 ```
@@ -226,10 +243,11 @@ docker compose build front # package.json更新時
 
 ## 参考資料
 
-- [Rails API開発ガイド](https://railsguides.jp/api_app.html)
+- [Rails API 開発ガイド](https://railsguides.jp/api_app.html)
 - [Next.js ドキュメント](https://nextjs.org/docs)
 - [Docker Compose ドキュメント](https://docs.docker.com/compose/)
 - [参考記事](https://qiita.com/HERUESTA/items/a2b014b9995f0ef6cf08)
+- [参考記事](https://qiita.com/miki-ymmt/items/31cbeb5ec63bb48f1a6b)
 
 ## ライセンス
 
@@ -237,5 +255,5 @@ docker compose build front # package.json更新時
 
 ## 更新履歴
 
-- 2026/01/04: Docker環境のセットアップ完了、README大幅更新
+- 2026/01/04: Docker 環境のセットアップ完了、README 大幅更新
 - 2026/01/02: プロジェクト初期作成
