@@ -7,3 +7,6 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+Memo.create(title: "初投稿", content: "初めて投稿しました！")
+Memo.create(title: "買い物メモ", content: "牛乳、卵、トイレットペーパー")
