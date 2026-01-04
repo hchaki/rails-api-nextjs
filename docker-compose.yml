@@ -25,6 +25,7 @@ services:
     stdin_open: true
     environment:
       - RAILS_ENV=development
+      - CORS_ALLOWED_ORIGINS=localhost:8000,127.0.0.1:8000
     networks:
       default:
         aliases:
@@ -43,5 +44,7 @@ services:
       - API_URL=http://api:3000
     depends_on:
       - back
+    networks:
+      - default
 volumes:
   mysql_data:
