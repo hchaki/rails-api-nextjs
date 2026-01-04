@@ -42,3 +42,6 @@ mysql_data/
 
 # Note: backend/ と frontend/ 内のファイルは
 # それぞれのディレクトリの .gitignore で管理されます
+
+# ai 設定
+.claude
