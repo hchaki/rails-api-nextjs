@@ -4,6 +4,14 @@
 
 Rails API バックエンドと Next.js フロントエンドを Docker Compose で統合した Web アプリケーション開発環境です。
 
+## 実装済み機能
+
+- ✅ メモの一覧表示（Server Component で SSR）
+- ✅ メモの新規作成（Client Component で CSR）
+- ✅ CORS 設定による API アクセス制御
+- ✅ 環境変数による設定管理
+- ✅ Docker 内部ネットワークによるコンテナ間通信
+
 ## 技術スタック
 
 ### バックエンド
@@ -33,17 +41,27 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 .
 ├── backend/          # Rails API
 │   ├── app/
+│   │   ├── controllers/  # MemosController など
+│   │   └── models/       # Memo モデルなど
 │   ├── config/
+│   │   ├── database.yml
+│   │   └── initializers/cors.rb
 │   ├── db/
 │   ├── Dockerfile
 │   ├── entrypoint.sh
-│   └── Gemfile
+│   ├── Gemfile
+│   ├── .env.example      # 環境変数のサンプル
+│   └── .env              # 環境変数（gitignore）
 ├── frontend/         # Next.js (TypeScript)
 │   ├── app/
+│   │   ├── memos/        # メモ機能のページ
+│   │   └── page.tsx
 │   ├── public/
 │   ├── Dockerfile
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   ├── .env.local.example  # 環境変数のサンプル
+│   └── .env.local          # 環境変数（gitignore）
 ├── docker-compose.yml
 ├── .gitignore
 └── README.md
@@ -65,7 +83,27 @@ git clone <repository-url>
 cd rails_api_nextjs
 ```
 
-2. **バックエンドのセットアップ**
+2. **環境変数ファイルの作成**
+
+バックエンドとフロントエンドの環境変数ファイルをセットアップします：
+
+```bash
+# バックエンド: .env ファイルを作成
+cp backend/.env.example backend/.env
+
+# フロントエンド: .env.local ファイルを作成
+cp frontend/.env.local.example frontend/.env.local
+```
+
+**重要**: 本番環境やステージング環境では、これらのファイルを適切な値で編集してください。
+
+**環境変数の説明**:
+- `backend/.env`
+  - `CORS_ALLOWED_ORIGINS`: ブラウザからのアクセスを許可するオリジン（カンマ区切り）
+- `frontend/.env.local`
+  - `NEXT_PUBLIC_API_URL`: Client Component からアクセスする API の URL
+
+3. **バックエンドのセットアップ**
 
 ```bash
 # Dockerイメージのビルド
@@ -78,7 +116,7 @@ docker compose run --rm back rails db:create
 docker compose run --rm back rails db:migrate
 ```
 
-3. **フロントエンドのセットアップ**
+4. **フロントエンドのセットアップ**
 
 ```bash
 # Dockerイメージのビルド
@@ -108,8 +146,11 @@ docker compose up -d
 
 ### アクセス先
 
-- **フロントエンド**: http://localhost:8000
+- **フロントエンド (トップ)**: http://localhost:8000
+- **メモ一覧**: http://localhost:8000/memos
+- **メモ作成**: http://localhost:8000/memos/new
 - **バックエンド API**: http://localhost:3003
+  - メモ一覧 API: http://localhost:3003/memos
 - **MySQL**: localhost:3306
 
 ### 個別のサービス起動
@@ -157,6 +198,26 @@ docker compose down
 ```bash
 docker compose down -v
 ```
+
+## 環境変数の設定
+
+### バックエンド環境変数 (`backend/.env`)
+
+| 変数名 | 説明 | デフォルト値 | 例 |
+|--------|------|-------------|-----|
+| `CORS_ALLOWED_ORIGINS` | CORS で許可するオリジン（カンマ区切り） | `localhost:8000,127.0.0.1:8000` | `example.com,sub.example.com` |
+
+### フロントエンド環境変数 (`frontend/.env.local`)
+
+| 変数名 | 説明 | デフォルト値 | 例 |
+|--------|------|-------------|-----|
+| `NEXT_PUBLIC_API_URL` | Client Component から API にアクセスする URL | `http://localhost:3003` | `https://api.example.com` |
+
+**注意事項**:
+- `NEXT_PUBLIC_` プレフィックスは、Next.js でブラウザ側にも公開される環境変数です
+- Server Component（SSR）では `docker-compose.yml` の `API_URL` 環境変数を使用して Docker 内部ネットワーク経由でアクセスします
+- `.env` と `.env.local` ファイルは `.gitignore` に含まれており、リポジトリには含まれません
+- 本番環境では `.env.example` / `.env.local.example` を参考に適切な値を設定してください
 
 ## データベース設定
 
@@ -255,5 +316,6 @@ docker compose build front # package.json更新時
 
 ## 更新履歴
 
+- 2026/01/05: 環境変数の整理、メモ CRUD 機能実装、CORS 設定
 - 2026/01/04: Docker 環境のセットアップ完了、README 大幅更新
 - 2026/01/02: プロジェクト初期作成
