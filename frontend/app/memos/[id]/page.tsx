@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DeleteButton from "./DeleteButton";
 
 type Memo = {
   id: number;
@@ -62,13 +63,14 @@ export default async function MemoDetailPage({
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link
           href="/memos"
           className="text-blue-600 hover:text-blue-800 underline"
         >
           ← メモ一覧に戻る
         </Link>
+        <DeleteButton memoId={memo.id} />
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">

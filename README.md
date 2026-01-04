@@ -7,7 +7,9 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 ## 実装済み機能
 
 - ✅ メモの一覧表示（Server Component で SSR）
+- ✅ メモの詳細表示（Server Component で SSR）
 - ✅ メモの新規作成（Client Component で CSR）
+- ✅ メモの削除（Client Component で CSR、確認ダイアログ付き）
 - ✅ CORS 設定による API アクセス制御
 - ✅ 環境変数による設定管理
 - ✅ Docker 内部ネットワークによるコンテナ間通信
@@ -148,9 +150,13 @@ docker compose up -d
 
 - **フロントエンド (トップ)**: http://localhost:8000
 - **メモ一覧**: http://localhost:8000/memos
+- **メモ詳細**: http://localhost:8000/memos/:id
 - **メモ作成**: http://localhost:8000/memos/new
 - **バックエンド API**: http://localhost:3003
-  - メモ一覧 API: http://localhost:3003/memos
+  - メモ一覧 API: `GET /memos`
+  - メモ詳細 API: `GET /memos/:id`
+  - メモ作成 API: `POST /memos`
+  - メモ削除 API: `DELETE /memos/:id`
 - **MySQL**: localhost:3306
 
 ### 個別のサービス起動
