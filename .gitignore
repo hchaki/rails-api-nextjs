@@ -1,0 +1,44 @@
+# Docker関連
+docker-compose.override.yml
+.dockerignore
+
+# OS関連
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# エディタ・IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# 環境変数ファイル（ルートレベル）
+.env
+.env.local
+.env.*.local
+
+# ログファイル
+*.log
+
+# 一時ファイル
+tmp/
+temp/
+
+# MySQL データボリューム（もしホストマウントする場合）
+mysql_data/
+
+# バックアップファイル
+*.bak
+*.backup
+
+# Note: backend/ と frontend/ 内のファイルは
+# それぞれのディレクトリの .gitignore で管理されます
