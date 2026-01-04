@@ -26,6 +26,12 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# ただし .example ファイルは除外しない
+!.env.example
+!.env.local.example
+!**/.env.example
+!**/.env.local.example
+
 # ログファイル
 *.log
 
