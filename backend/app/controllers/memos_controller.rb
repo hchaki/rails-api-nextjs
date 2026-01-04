@@ -21,6 +21,18 @@ class MemosController < ApplicationController
     end
   end
 
+  def update
+    memo = Memo.find(params[:id])
+
+    if memo.update(memo_params)
+      render json: memo
+    else
+      render json: { errors: memo.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Memo not found" }, status: :not_found
+  end
+
   def destroy
     memo = Memo.find(params[:id])
     memo.destroy

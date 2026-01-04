@@ -70,7 +70,15 @@ export default async function MemoDetailPage({
         >
           ← メモ一覧に戻る
         </Link>
-        <DeleteButton memoId={memo.id} />
+        <div className="flex gap-2">
+          <Link
+            href={`/memos/${memo.id}/edit`}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            編集
+          </Link>
+          <DeleteButton memoId={memo.id} />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
