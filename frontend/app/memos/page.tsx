@@ -51,16 +51,17 @@ export default async function MemosPage() {
       ) : (
         <div className="grid gap-4">
           {memos.map((memo) => (
-            <div
+            <Link
               key={memo.id}
-              className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+              href={`/memos/${memo.id}`}
+              className="block border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
               <h2 className="text-xl font-semibold mb-2">{memo.title}</h2>
-              <p className="text-gray-700 mb-2">{memo.content}</p>
+              <p className="text-gray-700 mb-2 line-clamp-2">{memo.content}</p>
               <p className="text-sm text-gray-500">
                 作成日: {new Date(memo.created_at).toLocaleString('ja-JP')}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}

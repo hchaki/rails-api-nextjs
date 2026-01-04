@@ -4,6 +4,13 @@ class MemosController < ApplicationController
     render json: memos
   end
 
+  def show
+    memo = Memo.find(params[:id])
+    render json: memo
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Memo not found" }, status: :not_found
+  end
+
   def create
     memo = Memo.new(memo_params)
 
