@@ -4,8 +4,8 @@ FROM  ruby:3.2.6
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends \
         nodejs \
-        mariadb-client \
-        default-libmysqlclient-dev \
+        postgresql-client \
+        libpq-dev \
         build-essential \
         vim \
     && apt-get clean \

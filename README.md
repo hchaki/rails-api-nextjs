@@ -22,7 +22,7 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 
 - Ruby 3.2.6
 - Rails 8.1.1 (API モード)
-- MySQL 8.0
+- PostgreSQL 16
 - Puma
 
 ### フロントエンド
@@ -37,7 +37,7 @@ Rails API バックエンドと Next.js フロントエンドを Docker Compose 
 ### インフラ
 
 - Docker & Docker Compose
-- MySQL (永続化ボリューム使用)
+- PostgreSQL (永続化ボリューム使用)
 
 ## プロジェクト構成
 
@@ -161,7 +161,7 @@ docker compose up -d
   - メモ作成 API: `POST /memos`
   - メモ更新 API: `PUT /memos/:id` または `PATCH /memos/:id`
   - メモ削除 API: `DELETE /memos/:id`
-- **MySQL**: localhost:3306
+- **PostgreSQL**: localhost:5432
 
 ### 個別のサービス起動
 
@@ -233,12 +233,19 @@ docker compose down -v
 
 ### 開発環境
 
+- データベース: PostgreSQL 16
 - データベース名: `llpp_db`
 - ユーザー名: `user`
 - パスワード: `password`
 - ホスト: `db` (Docker 内部ネットワーク)
+- ポート: 5432
 
-設定ファイル: `backend/config/database.yml`
+設定ファイル: [backend/config/database.yml](backend/config/database.yml)
+
+### 本番環境
+
+本番環境では環境変数 `DATABASE_URL` を使用してPostgreSQLに接続します。
+Neon、Render.com、Heroku などのマネージドデータベースサービスで提供される接続文字列をそのまま使用できます。
 
 ## トラブルシューティング
 
@@ -312,13 +319,154 @@ docker compose build back  # Gemfile更新時
 docker compose build front # package.json更新時
 ```
 
+## デプロイ
+
+このプロジェクトは **Vercel (フロントエンド) + Render.com (バックエンド) + Neon (データベース)** の構成で無料デプロイが可能です。
+
+### 推奨デプロイ構成
+
+| サービス | プラットフォーム | プラン | 月額費用 |
+|---------|-----------------|--------|---------|
+| Next.js | Vercel | Hobby (無料) | $0 |
+| Rails API | Render.com | Web Service (無料) | $0 |
+| PostgreSQL | Neon | Free Tier | $0 |
+
+**合計: 完全無料** 🎉
+
+### デプロイ手順
+
+#### 1. Neon でデータベースを作成
+
+1. [Neon](https://neon.tech/) にアクセスしてアカウント作成
+2. 新規プロジェクトを作成
+3. データベース接続文字列をコピー（後で使用）
+   - 形式: `postgresql://[user]:[password]@[host]/[database]?sslmode=require`
+
+#### 2. Render.com で Rails API をデプロイ
+
+1. [Render.com](https://render.com/) にアカウント作成
+2. 「New +」→「Web Service」を選択
+3. GitHub リポジトリを接続
+4. 以下の設定を入力：
+
+| 項目 | 設定値 |
+|------|--------|
+| Name | 任意の名前（例: `my-rails-api`） |
+| Region | Singapore (または最寄りのリージョン) |
+| Branch | `main` |
+| Root Directory | `backend` |
+| Runtime | Ruby |
+| Build Command | `bundle install; bundle exec rake assets:precompile; bundle exec rake assets:clean; bundle exec rails db:migrate RAILS_ENV=production` |
+| Start Command | `bundle exec rails server -b 0.0.0.0 -p $PORT -e production` |
+| Instance Type | Free |
+
+5. Environment Variables を設定：
+
+| Key | Value |
+|-----|-------|
+| `RAILS_ENV` | `production` |
+| `DATABASE_URL` | Neonからコピーした接続文字列 |
+| `SECRET_KEY_BASE` | `bundle exec rails secret` で生成した値 |
+| `CORS_ALLOWED_ORIGINS` | デプロイ後のVercel URL（例: `your-app.vercel.app`） |
+| `RAILS_MASTER_KEY` | `backend/config/master.key` の内容 |
+
+6. 「Create Web Service」をクリック
+
+**注意**:
+- デプロイ完了後、Render.comが提供するURL（例: `https://my-rails-api.onrender.com`）をメモしておく
+- 無料プランは非アクティブ時にスリープするため、初回アクセスに時間がかかる場合があります
+
+#### 3. Vercel で Next.js をデプロイ
+
+1. [Vercel](https://vercel.com/) にアカウント作成
+2. 「Add New...」→「Project」を選択
+3. GitHub リポジトリをインポート
+4. 以下の設定を入力：
+
+| 項目 | 設定値 |
+|------|--------|
+| Framework Preset | Next.js |
+| Root Directory | `frontend` |
+| Build Command | `yarn build` |
+| Output Directory | `.next` |
+
+5. Environment Variables を設定：
+
+| Key | Value |
+|-----|-------|
+| `NEXT_PUBLIC_API_URL` | Render.comのURL（例: `https://my-rails-api.onrender.com`） |
+| `API_URL` | Render.comのURL（SSR用） |
+
+6. 「Deploy」をクリック
+
+#### 4. CORS設定の更新
+
+Vercel デプロイ完了後、Vercel の URL を Render.com の環境変数に追加：
+
+1. Render.com ダッシュボードで Web Service を開く
+2. Environment タブを開く
+3. `CORS_ALLOWED_ORIGINS` の値を更新（例: `your-app.vercel.app`）
+4. 「Save Changes」→ 自動的に再デプロイされます
+
+### デプロイ後の確認
+
+1. Vercel URL にアクセス
+2. メモの作成・編集・削除が正常に動作することを確認
+3. 初回は Render.com がスリープから復帰するため、読み込みに時間がかかる場合があります（30秒程度）
+
+### 本番環境の制限事項
+
+**無料プランの制限**:
+- **Render.com**:
+  - 非アクティブ時に自動スリープ（15分後）
+  - 月750時間の稼働時間制限
+  - スリープ解除に30秒程度かかる
+- **Vercel**:
+  - 月100GB の帯域幅制限
+  - 個人・非商用プロジェクトのみ
+- **Neon**:
+  - 0.5GB ストレージ
+  - 月間コンピュート時間制限あり
+
+### トラブルシューティング (デプロイ)
+
+#### Rails のマイグレーションエラー
+
+Render.com のダッシュボードでログを確認：
+```bash
+# Build Command に以下を追加
+bundle exec rails db:create RAILS_ENV=production || true
+bundle exec rails db:migrate RAILS_ENV=production
+```
+
+#### CORS エラー
+
+1. Render.com の `CORS_ALLOWED_ORIGINS` を確認
+2. `https://` を含む完全なドメイン名を指定
+3. カンマ区切りで複数ドメイン対応可能
+
+#### API 接続エラー
+
+1. Vercel の環境変数 `NEXT_PUBLIC_API_URL` が正しいか確認
+2. Render.com の URL が `https://` で始まっているか確認
+3. Render.com がスリープ中の場合は30秒待つ
+
 ## 参考資料
 
+### 公式ドキュメント
 - [Rails API 開発ガイド](https://railsguides.jp/api_app.html)
 - [Next.js ドキュメント](https://nextjs.org/docs)
 - [Docker Compose ドキュメント](https://docs.docker.com/compose/)
-- [参考記事](https://qiita.com/HERUESTA/items/a2b014b9995f0ef6cf08)
-- [参考記事](https://qiita.com/miki-ymmt/items/31cbeb5ec63bb48f1a6b)
+
+### デプロイプラットフォーム
+- [Vercel ドキュメント](https://vercel.com/docs)
+- [Render.com ドキュメント](https://render.com/docs)
+- [Neon ドキュメント](https://neon.tech/docs/introduction)
+
+### 参考記事
+- [Rails + Render.com デプロイ方法](https://qiita.com/tomada/items/8be6e0df7ad74ef59207)
+- [Docker開発環境構築](https://qiita.com/HERUESTA/items/a2b014b9995f0ef6cf08)
+- [Rails API + Next.js 連携](https://qiita.com/miki-ymmt/items/31cbeb5ec63bb48f1a6b)
 
 ## ライセンス
 
@@ -326,6 +474,7 @@ docker compose build front # package.json更新時
 
 ## 更新履歴
 
+- 2026/01/10: PostgreSQL移行完了、デプロイガイド追加
 - 2026/01/05: 環境変数の整理、メモ CRUD 機能実装、CORS 設定
 - 2026/01/04: Docker 環境のセットアップ完了、README 大幅更新
 - 2026/01/02: プロジェクト初期作成

@@ -1,6 +1,6 @@
 default: &default
-  adapter: mysql2
-  encoding: utf8mb4
+  adapter: postgresql
+  encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: user
   password: password
@@ -10,21 +10,26 @@ development:
   <<: *default
   database: llpp_db
 
+test:
+  <<: *default
+  database: llpp_db_test
+
+# Production環境ではPostgreSQLを使用（Neon, Render.com等）
 production:
   primary: &primary_production
-    <<: *default
-    database: sample_db_production
-    username: app
-    password: <%= ENV["APP_DATABASE_PASSWORD"] %>
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    url: <%= ENV['DATABASE_URL'] %>
   cache:
     <<: *primary_production
-    database: sample_db_production_cache
+    database: <%= ENV.fetch("CACHE_DATABASE_NAME", "cache") %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: sample_production_queue
+    database: <%= ENV.fetch("QUEUE_DATABASE_NAME", "queue") %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: sample_production_cable
+    database: <%= ENV.fetch("CABLE_DATABASE_NAME", "cable") %>
     migrations_paths: db/cable_migrate
