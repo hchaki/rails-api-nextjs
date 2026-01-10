@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 type Memo = {
   id: number;
   title: string;

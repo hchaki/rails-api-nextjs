@@ -1,6 +1,8 @@
 import Link from "next/link";
 import DeleteButton from "./DeleteButton";
 
+export const dynamic = 'force-dynamic';
+
 type Memo = {
   id: number;
   title: string;
