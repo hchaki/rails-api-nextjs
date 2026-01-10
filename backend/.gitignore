@@ -33,3 +33,7 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Ignore database backup files
+/db/*.sql
+/db/backups/
+
