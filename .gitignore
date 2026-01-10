@@ -39,8 +39,8 @@ Thumbs.db
 tmp/
 temp/
 
-# MySQL データボリューム（もしホストマウントする場合）
-mysql_data/
+# データベースボリューム（もしホストマウントする場合）
+postgres_data/
 
 # バックアップファイル
 *.bak

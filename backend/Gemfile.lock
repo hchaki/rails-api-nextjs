@@ -148,8 +148,6 @@ GEM
     minitest (6.0.1)
       prism (~> 1.5)
     msgpack (1.8.0)
-    mysql2 (0.5.7)
-      bigdecimal
     net-imap (0.6.2)
       date
       net-protocol
@@ -318,7 +316,6 @@ DEPENDENCIES
   debug
   image_processing (~> 1.2)
   kamal
-  mysql2 (~> 0.5)
   pg (~> 1.5)
   puma (>= 5.0)
   rack-cors
