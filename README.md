@@ -333,80 +333,175 @@ docker compose build front # package.json更新時
 
 **合計: 完全無料** 🎉
 
-### デプロイ手順
+### デプロイ手順（詳細版）
+
+このセクションでは、実際のデプロイで使用した設定例を示します。
 
 #### 1. Neon でデータベースを作成
 
-1. [Neon](https://neon.tech/) にアクセスしてアカウント作成
-2. 新規プロジェクトを作成
-3. データベース接続文字列をコピー（後で使用）
+1. [Neon](https://neon.tech/) にアクセスしてGitHubアカウントでサインイン
+2. 「Create a project」をクリック
+3. プロジェクト名を入力（例: `rails-nextjs-db`）
+4. リージョンを選択（Asia Pacific推奨）
+5. 「Create project」をクリック
+6. **Connection string** をコピー（後で使用）
    - 形式: `postgresql://[user]:[password]@[host]/[database]?sslmode=require`
+   - 例: `postgresql://user:pass123@ep-cool-forest-123456.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+
+**Neon設定例:**
+```
+Project name: rails-nextjs-db
+Region: Asia Pacific (Singapore) - AWS
+Database name: neondb (デフォルト)
+```
 
 #### 2. Render.com で Rails API をデプロイ
 
-1. [Render.com](https://render.com/) にアカウント作成
+1. [Render.com](https://render.com/) にGitHubアカウントでサインイン
 2. 「New +」→「Web Service」を選択
 3. GitHub リポジトリを接続
+   - 「Configure account」でリポジトリへのアクセス権限を付与
 4. 以下の設定を入力：
 
+**基本設定:**
 | 項目 | 設定値 |
 |------|--------|
-| Name | 任意の名前（例: `my-rails-api`） |
-| Region | Singapore (または最寄りのリージョン) |
+| Name | `rails-api-nextjs` (または任意の名前) |
+| Region | `Singapore` (Neonと同じリージョン推奨) |
 | Branch | `main` |
 | Root Directory | `backend` |
-| Runtime | Ruby |
-| Build Command | `bundle install; bundle exec rake assets:precompile; bundle exec rake assets:clean; bundle exec rails db:migrate RAILS_ENV=production` |
-| Start Command | `bundle exec rails server -b 0.0.0.0 -p $PORT -e production` |
-| Instance Type | Free |
+| Runtime | `Docker` (Dockerfileを使用) |
+| Instance Type | `Free` |
 
-5. Environment Variables を設定：
+**重要**: Dockerfileがあるため、Runtime は **Docker** を選択してください。
 
-| Key | Value |
-|-----|-------|
-| `RAILS_ENV` | `production` |
-| `DATABASE_URL` | Neonからコピーした接続文字列 |
-| `SECRET_KEY_BASE` | `bundle exec rails secret` で生成した値 |
-| `CORS_ALLOWED_ORIGINS` | デプロイ後のVercel URL（例: `your-app.vercel.app`） |
-| `RAILS_MASTER_KEY` | `backend/config/master.key` の内容 |
+**環境変数の設定:**
 
-6. 「Create Web Service」をクリック
+「Environment」タブで以下を設定：
 
-**注意**:
-- デプロイ完了後、Render.comが提供するURL（例: `https://my-rails-api.onrender.com`）をメモしておく
-- 無料プランは非アクティブ時にスリープするため、初回アクセスに時間がかかる場合があります
+| Key | Value | 説明 |
+|-----|-------|------|
+| `RAILS_ENV` | `production` | Rails環境 |
+| `DATABASE_URL` | `postgresql://user:pass@host/db?sslmode=require` | Neonからコピーした接続文字列 |
+| `SECRET_KEY_BASE` | `rails secret` で生成した64文字のランダム文字列 | Railsのセッション暗号化キー |
+| `RAILS_MASTER_KEY` | `backend/config/master.key` の内容 | Rails credentials暗号化キー |
+| `CORS_ALLOWED_ORIGINS` | `localhost:8000,127.0.0.1:8000` | 初期値（後でVercel URLを追加） |
+
+**SECRET_KEY_BASEの生成方法:**
+```bash
+# ローカルで実行
+docker compose run --rm back bundle exec rails secret
+# または
+docker compose run --rm back rails secret
+```
+
+**RAILS_MASTER_KEYの確認方法:**
+```bash
+cat backend/config/master.key
+```
+
+5. 「Create Web Service」をクリック
+6. デプロイが完了するまで待つ（5-10分程度）
+7. デプロイ完了後、Render.comが提供するURLをメモ
+   - 例: `https://rails-api-nextjs.onrender.com`
+
+**トラブルシューティング（Render.com）:**
+
+もしデプロイ時にエラーが発生した場合:
+
+1. **Gemfile.lockのmysql2エラー**:
+   ```bash
+   docker compose run --rm back bundle install
+   git add backend/Gemfile.lock
+   git commit -m "fix: update Gemfile.lock"
+   git push
+   ```
+
+2. **Host Authorizationエラー**:
+   - `backend/config/environments/production.rb` に以下を追加:
+   ```ruby
+   config.hosts << "your-app-name.onrender.com"
+   config.hosts << ENV["RENDER_EXTERNAL_HOSTNAME"] if ENV["RENDER_EXTERNAL_HOSTNAME"].present?
+   ```
+
+3. **Database Migration失敗**:
+   - `backend/entrypoint.sh` でマイグレーションが自動実行されます
+   - ログで `Running database migrations...` を確認
 
 #### 3. Vercel で Next.js をデプロイ
 
-1. [Vercel](https://vercel.com/) にアカウント作成
+1. [Vercel](https://vercel.com/) にGitHubアカウントでサインイン
 2. 「Add New...」→「Project」を選択
 3. GitHub リポジトリをインポート
-4. 以下の設定を入力：
+   - リポジトリが表示されない場合は「Adjust GitHub App Permissions」から権限を付与
+4. 「Import」をクリック後、以下の設定を入力：
 
+**プロジェクト設定:**
 | 項目 | 設定値 |
 |------|--------|
-| Framework Preset | Next.js |
-| Root Directory | `frontend` |
-| Build Command | `yarn build` |
-| Output Directory | `.next` |
+| Project Name | `rails-api-nextjs` (または任意) |
+| Framework Preset | `Next.js` (自動検出) |
+| Root Directory | `frontend` ← **重要！必ず設定** |
+| Build Command | デフォルト（自動） |
+| Output Directory | デフォルト（自動） |
+| Install Command | デフォルト（自動） |
 
-5. Environment Variables を設定：
+**Root Directoryの設定方法:**
+- 「Configure Project」セクションを見つける
+- 「Root Directory」の横の「Edit」をクリック
+- `frontend` と入力
+- 「Continue」をクリック
 
-| Key | Value |
-|-----|-------|
-| `NEXT_PUBLIC_API_URL` | Render.comのURL（例: `https://my-rails-api.onrender.com`） |
-| `API_URL` | Render.comのURL（SSR用） |
+**環境変数の設定:**
 
-6. 「Deploy」をクリック
+「Environment Variables」セクションで以下を追加：
 
-#### 4. CORS設定の更新
+| Key | Value | 説明 |
+|-----|-------|------|
+| `NEXT_PUBLIC_API_URL` | `https://rails-api-nextjs.onrender.com` | Client Component用API URL |
+| `API_URL` | `https://rails-api-nextjs.onrender.com` | Server Component用API URL |
 
-Vercel デプロイ完了後、Vercel の URL を Render.com の環境変数に追加：
+**重要:**
+- `NEXT_PUBLIC_` プレフィックスは必須（ブラウザで使用するため）
+- すべての環境（Production、Preview、Development）にチェックを入れる
 
-1. Render.com ダッシュボードで Web Service を開く
-2. Environment タブを開く
-3. `CORS_ALLOWED_ORIGINS` の値を更新（例: `your-app.vercel.app`）
-4. 「Save Changes」→ 自動的に再デプロイされます
+5. 「Deploy」をクリック
+6. デプロイ完了後、Vercel URLをメモ
+   - 例: `https://rails-api-nextjs.vercel.app`
+
+**Vercel設定例:**
+```
+Project: rails-api-nextjs
+Domain: rails-api-nextjs.vercel.app
+Preview URL: rails-api-nextjs-git-main-username.vercel.app
+Root Directory: frontend
+Environment Variables:
+  - NEXT_PUBLIC_API_URL=https://rails-api-nextjs.onrender.com
+  - API_URL=https://rails-api-nextjs.onrender.com
+```
+
+#### 4. CORS設定の更新（重要）
+
+Vercel デプロイ完了後、Rails APIにVercel URLを許可する必要があります：
+
+1. [Render.com Dashboard](https://dashboard.render.com/) を開く
+2. デプロイしたWeb Serviceを選択
+3. 左側メニューの **「Environment」** をクリック
+4. `CORS_ALLOWED_ORIGINS` の値を更新:
+   ```
+   rails-api-nextjs.vercel.app,rails-api-nextjs-git-main-username.vercel.app
+   ```
+   - カンマ区切りで複数ドメイン対応
+   - `https://` は不要（ドメイン名のみ）
+   - Vercelの本番URLとプレビューURL両方を追加推奨
+
+5. 「Save Changes」をクリック
+6. 自動的に再デプロイされます（1-2分）
+
+**CORS設定例:**
+```env
+CORS_ALLOWED_ORIGINS=rails-api-nextjs.vercel.app,rails-api-nextjs-git-main-username.vercel.app,localhost:8000,127.0.0.1:8000
+```
 
 ### デプロイ後の確認
 
