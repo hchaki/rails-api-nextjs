@@ -1,7 +1,7 @@
 module Authenticable
   extend ActiveSupport::Concern
 
-  include do
+  included do
     attr_reader :current_user
   end
 

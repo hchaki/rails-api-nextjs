@@ -8,5 +8,8 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
+  # 認証関連
+  post '/signup', to: 'users#create'
+
   resources :memos
 end
