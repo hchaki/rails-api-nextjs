@@ -10,6 +10,9 @@ Rails.application.routes.draw do
 
   # 認証関連
   post '/signup', to: 'users#create'
+  post '/login', to: 'sessions#create'
+  get '/current_user', to: 'sessions#show'
+  delete '/logout', to: 'sessions#destroy'
 
   resources :memos
 end
