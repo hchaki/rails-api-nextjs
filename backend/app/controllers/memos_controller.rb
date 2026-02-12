@@ -1,4 +1,6 @@
 class MemosController < ApplicationController
+  before_action :authenticate_request!
+
   def index
     memos = Memo.all
     render json: memos
