@@ -32,7 +32,7 @@ module App
     config.time_zone = 'Tokyo'
     # ActiveRecordがデータベースから取得する時刻を、東京に合わせる
     config.active_record.default_timezone = :local
-    config.i18n.default_locale = :ja
+    config.i18n.default_locale = :en
 
     # 許可するホスト名を追加（Docker内部ネットワーク用）
     config.hosts << "api"

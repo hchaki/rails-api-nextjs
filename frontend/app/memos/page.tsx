@@ -1,6 +1,14 @@
-import Link from 'next/link';
+"use client";
 
-export const dynamic = 'force-dynamic';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLoadContent } from "@/hooks/useLoadContent";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PlusIcon } from "lucide-react";
 
 type Memo = {
   id: number;
@@ -10,59 +18,103 @@ type Memo = {
   updated_at: string;
 };
 
-async function getMemos(): Promise<Memo[]> {
-  // サーバーサイド（Next.jsコンテナ内）からはDocker内部ネットワークを使用
-  // クライアントサイドからはlocalhost経由でアクセス
-  const apiUrl = process.env.API_URL || 'http://back:3000';
-
-  try {
-    const res = await fetch(`${apiUrl}/memos`, {
-      cache: 'no-store', // 常に最新データを取得
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('API Error:', res.status, errorText);
-      throw new Error(`Failed to fetch memos: ${res.status} ${errorText}`);
-    }
-
-    return res.json();
-  } catch (error) {
-    console.error('Fetch error:', error);
-    throw error;
-  }
+function MemoSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-5/6" />
+      </CardContent>
+    </Card>
+  );
 }
 
-export default async function MemosPage() {
-  const memos = await getMemos();
+export default function MemosPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [memos, loading] = useLoadContent<Memo[]>("memos");
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="container mx-auto p-4 max-w-4xl">
+        <div className="flex justify-between items-center mb-6">
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <div className="grid gap-4">
+          <MemoSkeleton />
+          <MemoSkeleton />
+          <MemoSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (!memos) {
+    return (
+      <div className="container mx-auto p-4 max-w-4xl">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">エラー</CardTitle>
+            <CardDescription>メモの読み込みに失敗しました</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">メモ一覧</h1>
-        <Link
-          href="/memos/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          新規作成
-        </Link>
+        <Button asChild>
+          <Link href="/memos/new">
+            <PlusIcon className="mr-2 h-4 w-4" />
+            新規作成
+          </Link>
+        </Button>
       </div>
 
       {memos.length === 0 ? (
-        <p className="text-gray-500">メモがありません</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>メモがありません</CardTitle>
+            <CardDescription>
+              「新規作成」ボタンから最初のメモを作成しましょう
+            </CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
         <div className="grid gap-4">
           {memos.map((memo) => (
-            <Link
-              key={memo.id}
-              href={`/memos/${memo.id}`}
-              className="block border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <h2 className="text-xl font-semibold mb-2">{memo.title}</h2>
-              <p className="text-gray-700 mb-2 line-clamp-2">{memo.content}</p>
-              <p className="text-sm text-gray-500">
-                作成日: {new Date(memo.created_at).toLocaleString('ja-JP')}
-              </p>
+            <Link key={memo.id} href={`/memos/${memo.id}`}>
+              <Card className="transition-all hover:shadow-lg cursor-pointer">
+                <CardHeader>
+                  <CardTitle>{memo.title}</CardTitle>
+                  <CardDescription>
+                    作成日: {new Date(memo.created_at).toLocaleString("ja-JP")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground line-clamp-2">
+                    {memo.content}
+                  </p>
+                </CardContent>
+              </Card>
             </Link>
           ))}
         </div>
