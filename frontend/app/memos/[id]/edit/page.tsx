@@ -1,10 +1,18 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { fetchWithAuth } from "@/lib/auth";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { ArrowLeftIcon } from "lucide-react";
 
 type Memo = {
   id: number;
@@ -16,13 +24,11 @@ type Memo = {
 
 export default function EditMemoPage() {
   const router = useRouter();
-
   const params = useParams();
   const id = params.id as string;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,22 +53,22 @@ export default function EditMemoPage() {
           setTitle(memo.title);
           setContent(memo.content);
         } else {
-          setErrors(["メモの取得に失敗しました"]);
+          toast.error("メモの取得に失敗しました");
+          router.push("/memos");
         }
       } catch (error) {
         console.error("Error fetching memo:", error);
-        setErrors(["ネットワークエラーが発生しました"]);
+        toast.error("ネットワークエラーが発生しました");
       } finally {
         setLoading(false);
       }
     };
 
     fetchMemo();
-  }, [id, user]);
+  }, [id, user, router]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors([]);
     setIsSubmitting(true);
 
     try {
@@ -81,99 +87,100 @@ export default function EditMemoPage() {
       });
 
       if (res.ok) {
+        toast.success("メモを更新しました");
         router.push(`/memos/${id}`);
         router.refresh();
       } else {
         const data = await res.json();
-        setErrors(data.errors || ["メモの更新に失敗しました"]);
+        toast.error(data.errors?.[0] || "メモの更新に失敗しました");
       }
     } catch (error) {
       console.error("Error updating memo:", error);
-      setErrors(["ネットワークエラーが発生しました"]);
+      toast.error("ネットワークエラーが発生しました");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (authLoading || loading) {
-    return <div className="container mx-auto p-4">Loading...</div>;
+    return (
+      <div className="container mx-auto p-4 max-w-2xl">
+        <div className="mb-6">
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+            <Skeleton className="h-10 w-24" />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={`/memos/${id}`}
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
-          ← メモ詳細に戻る
-        </Link>
+        <Button variant="ghost" asChild>
+          <Link href={`/memos/${id}`}>
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            メモ詳細に戻る
+          </Link>
+        </Button>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">メモ編集</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">メモ編集</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">タイトル</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="メモのタイトルを入力"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
 
-      {errors.length > 0 && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <ul className="list-disc list-inside">
-            {errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="content">内容</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="メモの内容を入力"
+                rows={10}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            タイトル
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="content"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            内容
-          </label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={6}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "更新中..." : "更新"}
-          </button>
-
-          <Link
-            href={`/memos/${id}`}
-            className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-          >
-            キャンセル
-          </Link>
-        </div>
-      </form>
+            <div className="flex gap-4">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "更新中..." : "更新"}
+              </Button>
+              <Button type="button" variant="outline" asChild>
+                <Link href={`/memos/${id}`}>キャンセル</Link>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

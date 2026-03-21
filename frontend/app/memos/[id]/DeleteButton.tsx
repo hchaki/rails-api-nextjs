@@ -3,18 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Trash2Icon } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 export default function DeleteButton({ memoId }: { memoId: number }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm("このメモを削除しますか？この操作は取り消せません。")) {
-      return;
-    }
-
     setIsDeleting(true);
 
     try {
@@ -23,27 +34,48 @@ export default function DeleteButton({ memoId }: { memoId: number }) {
       });
 
       if (res.ok) {
+        toast.success("メモを削除しました");
         router.push("/memos");
         router.refresh();
       } else {
         const data = await res.json();
-        alert(data.error || "メモの削除に失敗しました");
+        toast.error(data.error || "メモの削除に失敗しました");
       }
     } catch (error) {
       console.error("Error deleting memo:", error);
-      alert("ネットワークエラーが発生しました");
+      toast.error("ネットワークエラーが発生しました");
     } finally {
       setIsDeleting(false);
+      setOpen(false);
     }
   };
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isDeleting}
-      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-    >
-      {isDeleting ? "削除中..." : "削除"}
-    </button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive">
+          <Trash2Icon className="mr-2 h-4 w-4" />
+          削除
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>メモを削除しますか？</AlertDialogTitle>
+          <AlertDialogDescription>
+            この操作は取り消せません。メモは完全に削除されます。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>キャンセル</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "削除中..." : "削除"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

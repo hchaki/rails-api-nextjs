@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/auth";
 import DeleteButton from "./DeleteButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 
 type Memo = {
   id: number;
@@ -28,14 +31,12 @@ export default function MemoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // 認証チェック
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
     }
   }, [user, authLoading, router]);
 
-  // メモ取得
   useEffect(() => {
     if (!user) return;
 
@@ -58,63 +59,85 @@ export default function MemoDetailPage() {
   }, [user, id]);
 
   if (authLoading || loading) {
-    return <div className="container mx-auto p-4">Loading...</div>;
+    return (
+      <div className="container mx-auto p-4 max-w-3xl">
+        <div className="mb-6">
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!user) return null;
 
   if (error || !memo) {
     return (
-      <div className="container mx-auto p-4 max-w-2xl">
+      <div className="container mx-auto p-4 max-w-3xl">
         <div className="mb-6">
-          <Link
-            href="/memos"
-            className="text-blue-600 hover:text-blue-800 underline"
-          >
-            ← メモ一覧に戻る
-          </Link>
+          <Button variant="ghost" asChild>
+            <Link href="/memos">
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              メモ一覧に戻る
+            </Link>
+          </Button>
         </div>
-
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p className="font-bold">エラー</p>
-          <p>メモが見つかりませんでした。</p>
-        </div>
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">エラー</CardTitle>
+            <CardDescription>メモが見つかりませんでした</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
+    <div className="container mx-auto p-4 max-w-3xl">
       <div className="mb-6 flex justify-between items-center">
-        <Link
-          href="/memos"
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
-          ← メモ一覧に戻る
-        </Link>
-        <div className="flex gap-2">
-          <Link
-            href={`/memos/${memo.id}/edit`}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
-            編集
+        <Button variant="ghost" asChild>
+          <Link href="/memos">
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            メモ一覧に戻る
           </Link>
+        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href={`/memos/${memo.id}/edit`}>
+              <PencilIcon className="mr-2 h-4 w-4" />
+              編集
+            </Link>
+          </Button>
           <DeleteButton memoId={memo.id} />
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <h1 className="text-3xl font-bold mb-4">{memo.title}</h1>
-
-        <div className="text-gray-500 text-sm mb-6">
-          <p>作成日: {new Date(memo.created_at).toLocaleString("ja-JP")}</p>
-          <p>更新日: {new Date(memo.updated_at).toLocaleString("ja-JP")}</p>
-        </div>
-
-        <div className="prose max-w-none">
-          <p className="text-gray-800 whitespace-pre-wrap">{memo.content}</p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-3xl">{memo.title}</CardTitle>
+          <CardDescription>
+            <div className="flex flex-col gap-1 text-sm">
+              <span>作成日: {new Date(memo.created_at).toLocaleString("ja-JP")}</span>
+              <span>更新日: {new Date(memo.updated_at).toLocaleString("ja-JP")}</span>
+            </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="prose max-w-none">
+            <p className="whitespace-pre-wrap text-foreground">{memo.content}</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
