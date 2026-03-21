@@ -1,6 +1,11 @@
-import Link from 'next/link';
+"use client";
 
-export const dynamic = 'force-dynamic';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { useLoadContent } from "@/hooks/useLoadContent";
 
 type Memo = {
   id: number;
@@ -10,31 +15,32 @@ type Memo = {
   updated_at: string;
 };
 
-async function getMemos(): Promise<Memo[]> {
-  // サーバーサイド（Next.jsコンテナ内）からはDocker内部ネットワークを使用
-  // クライアントサイドからはlocalhost経由でアクセス
-  const apiUrl = process.env.API_URL || 'http://back:3000';
+export default function MemosPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [memos, loading] = useLoadContent<Memo[]>("memos");
 
-  try {
-    const res = await fetch(`${apiUrl}/memos`, {
-      cache: 'no-store', // 常に最新データを取得
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('API Error:', res.status, errorText);
-      throw new Error(`Failed to fetch memos: ${res.status} ${errorText}`);
+  // 認証チェック: ログインしていなければ /login にリダイレクト
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
     }
+  }, [user, authLoading, router]);
 
-    return res.json();
-  } catch (error) {
-    console.error('Fetch error:', error);
-    throw error;
+  // ローディング中
+  if (authLoading || loading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
   }
-}
 
-export default async function MemosPage() {
-  const memos = await getMemos();
+  // 認証されていない（リダイレクト中）
+  if (!user) {
+    return null;
+  }
+
+  // データ取得エラー
+  if (!memos) {
+    return <div className="container mx-auto p-4">Error loading memos</div>;
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -61,7 +67,7 @@ export default async function MemosPage() {
               <h2 className="text-xl font-semibold mb-2">{memo.title}</h2>
               <p className="text-gray-700 mb-2 line-clamp-2">{memo.content}</p>
               <p className="text-sm text-gray-500">
-                作成日: {new Date(memo.created_at).toLocaleString('ja-JP')}
+                作成日: {new Date(memo.created_at).toLocaleString("ja-JP")}
               </p>
             </Link>
           ))}

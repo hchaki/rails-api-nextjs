@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 interface User {
   id: number;
@@ -42,10 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getToken();
     if (token) {
       (async () => {
-        const res = await fetchWithAuth(`${API_URL}/current_user`);
-        const data = await res.json();
-        setUser(data);
-        setLoading(false);
+        try {
+          const res = await fetchWithAuth(`${API_URL}/current_user`);
+          if (!res.ok) {
+            removeToken();
+            setUser(null);
+          } else {
+            const data = await res.json();
+            setUser(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch current user:", error);
+          removeToken();
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
       })();
     } else {
       setLoading(false);
@@ -53,56 +65,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    try {
-      const res = await fetch(`${API_URL}/login`, {
+    const res = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "ログインに失敗しました");
+    }
+
+    const data = await res.json();
+    setToken(data.token);
+    setUser(data.user);
+  }, []);
+
+  const signup = useCallback(
+    async (email: string, password: string, passwordConfirmation: string) => {
+      const res = await fetch(`${API_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          user: {
+            email,
+            password,
+            password_confirmation: passwordConfirmation,
+          },
+        }),
       });
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "ログインに失敗しました");
+        throw new Error(error.error || "サインアップに失敗しました");
       }
 
       const data = await res.json();
       setToken(data.token);
       setUser(data.user);
-    } catch {
-      throw new Error("login error");
-    }
-  }, []);
-
-  const signup = useCallback(
-    async (email: string, password: string, passwordConfirmation: string) => {
-      try {
-        const res = await fetch(`${API_URL}/signup`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user: {
-              email,
-              password,
-              password_confirmation: passwordConfirmation,
-            },
-          }),
-        });
-
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.error || "サインアップに失敗しました");
-        }
-
-        const data = await res.json();
-        setToken(data.token);
-        setUser(data.user);
-      } catch {
-        throw new Error("signup error");
-      }
     },
     [],
   );

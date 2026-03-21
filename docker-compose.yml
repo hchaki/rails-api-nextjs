@@ -35,12 +35,13 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     working_dir: /app
-    command: yarn dev -p 4000
+    command: sh -c "yarn install && yarn dev -p 4000"
     ports:
       - "8000:4000"
     environment:
-      - API_URL=http://api:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:3003
     depends_on:
       - back
     networks:

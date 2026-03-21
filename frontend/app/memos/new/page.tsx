@@ -1,15 +1,25 @@
-'use client';
+"use client";
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/auth";
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
 
 export default function NewMemoPage() {
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -17,11 +27,11 @@ export default function NewMemoPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
-      const res = await fetch(`${apiUrl}/memos`, {
-        method: 'POST',
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+      const res = await fetchWithAuth(`${apiUrl}/memos`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           memo: {
@@ -32,15 +42,15 @@ export default function NewMemoPage() {
       });
 
       if (res.ok) {
-        router.push('/memos');
+        router.push("/memos");
         router.refresh();
       } else {
         const data = await res.json();
-        setErrors(data.errors || ['メモの作成に失敗しました']);
+        setErrors(data.errors || ["メモの作成に失敗しました"]);
       }
     } catch (error) {
-      console.error('Error creating memo:', error);
-      setErrors(['ネットワークエラーが発生しました']);
+      console.error("Error creating memo:", error);
+      setErrors(["ネットワークエラーが発生しました"]);
     } finally {
       setIsSubmitting(false);
     }
@@ -110,7 +120,7 @@ export default function NewMemoPage() {
             disabled={isSubmitting}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '作成中...' : '作成'}
+            {isSubmitting ? "作成中..." : "作成"}
           </button>
 
           <Link

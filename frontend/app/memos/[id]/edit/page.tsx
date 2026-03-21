@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect, FormEvent } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect, FormEvent } from "react";
+import { fetchWithAuth } from "@/lib/auth";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 
 type Memo = {
   id: number;
@@ -14,38 +16,49 @@ type Memo = {
 
 export default function EditMemoPage() {
   const router = useRouter();
+
   const params = useParams();
   const id = params.id as string;
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { user, loading: authLoading } = useAuth();
+
   useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
     const fetchMemo = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
-        const res = await fetch(`${apiUrl}/memos/${id}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+        const res = await fetchWithAuth(`${apiUrl}/memos/${id}`);
 
         if (res.ok) {
           const memo: Memo = await res.json();
           setTitle(memo.title);
           setContent(memo.content);
         } else {
-          setErrors(['メモの取得に失敗しました']);
+          setErrors(["メモの取得に失敗しました"]);
         }
       } catch (error) {
-        console.error('Error fetching memo:', error);
-        setErrors(['ネットワークエラーが発生しました']);
+        console.error("Error fetching memo:", error);
+        setErrors(["ネットワークエラーが発生しました"]);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchMemo();
-  }, [id]);
+  }, [id, user]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,11 +66,11 @@ export default function EditMemoPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003';
-      const res = await fetch(`${apiUrl}/memos/${id}`, {
-        method: 'PUT',
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+      const res = await fetchWithAuth(`${apiUrl}/memos/${id}`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           memo: {
@@ -72,22 +85,18 @@ export default function EditMemoPage() {
         router.refresh();
       } else {
         const data = await res.json();
-        setErrors(data.errors || ['メモの更新に失敗しました']);
+        setErrors(data.errors || ["メモの更新に失敗しました"]);
       }
     } catch (error) {
-      console.error('Error updating memo:', error);
-      setErrors(['ネットワークエラーが発生しました']);
+      console.error("Error updating memo:", error);
+      setErrors(["ネットワークエラーが発生しました"]);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <p className="text-gray-500">読み込み中...</p>
-      </div>
-    );
+  if (authLoading || loading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
   }
 
   return (
@@ -154,7 +163,7 @@ export default function EditMemoPage() {
             disabled={isSubmitting}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '更新中...' : '更新'}
+            {isSubmitting ? "更新中..." : "更新"}
           </button>
 
           <Link

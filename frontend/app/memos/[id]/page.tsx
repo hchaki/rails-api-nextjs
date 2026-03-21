@@ -1,7 +1,12 @@
-import Link from "next/link";
-import DeleteButton from "./DeleteButton";
+"use client";
 
-export const dynamic = 'force-dynamic';
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/auth";
+import DeleteButton from "./DeleteButton";
 
 type Memo = {
   id: number;
@@ -11,39 +16,54 @@ type Memo = {
   updated_at: string;
 };
 
-async function getMemo(id: string): Promise<Memo | null> {
-  const apiUrl = process.env.API_URL || "http://back:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
-  try {
-    const res = await fetch(`${apiUrl}/memos/${id}`, {
-      cache: "no-store",
-    });
+export default function MemoDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
 
-    if (!res.ok) {
-      if (res.status === 404) {
-        return null;
-      }
-      const errorText = await res.text();
-      console.error("API Error:", res.status, errorText);
-      return null;
+  const { user, loading: authLoading } = useAuth();
+  const [memo, setMemo] = useState<Memo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  // 認証チェック
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
     }
+  }, [user, authLoading, router]);
 
-    return res.json();
-  } catch (error) {
-    console.error("Fetch error:", error);
-    return null;
+  // メモ取得
+  useEffect(() => {
+    if (!user) return;
+
+    (async () => {
+      try {
+        const res = await fetchWithAuth(`${API_URL}/memos/${id}`);
+        if (!res.ok) {
+          setError(true);
+        } else {
+          const data = await res.json();
+          setMemo(data);
+        }
+      } catch (err) {
+        console.error(err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user, id]);
+
+  if (authLoading || loading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
   }
-}
 
-export default async function MemoDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const memo = await getMemo(id);
+  if (!user) return null;
 
-  if (!memo) {
+  if (error || !memo) {
     return (
       <div className="container mx-auto p-4 max-w-2xl">
         <div className="mb-6">
