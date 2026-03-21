@@ -51,3 +51,6 @@ postgres_data/
 
 # ai 設定
 .claude
+
+# wiki は別途アップロード
+rails-api-nextjs.wiki/
