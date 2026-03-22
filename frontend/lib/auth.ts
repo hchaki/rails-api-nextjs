@@ -1,3 +1,5 @@
+export const API_URL = "/api";
+
 const TOKEN_KEY = "auth_token";
 
 function hasWindow(): boolean {
@@ -56,7 +58,6 @@ export async function fetchWithAuth(
 }
 
 async function tryRefresh(): Promise<boolean> {
-  const API_URL = "/api";
   try {
     const res = await fetch(`${API_URL}/refresh`, {
       method: "POST",

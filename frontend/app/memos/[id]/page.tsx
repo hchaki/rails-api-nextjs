@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth, API_URL } from "@/lib/auth";
 import DeleteButton from "./DeleteButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +18,6 @@ type Memo = {
   created_at: string;
   updated_at: string;
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 export default function MemoDetailPage() {
   const params = useParams();

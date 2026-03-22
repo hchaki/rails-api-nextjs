@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchWithAuth, getToken, removeToken, setToken } from "@/lib/auth";
+import { fetchWithAuth, getToken, removeToken, setToken, API_URL } from "@/lib/auth";
 import {
   createContext,
   ReactNode,
@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 
-const API_URL = "/api";
 
 interface User {
   id: number;

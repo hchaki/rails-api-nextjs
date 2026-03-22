@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth, API_URL } from "@/lib/auth";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,7 @@ export default function EditMemoPage() {
 
     const fetchMemo = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
-        const res = await fetchWithAuth(`${apiUrl}/memos/${id}`);
+        const res = await fetchWithAuth(`${API_URL}/memos/${id}`);
 
         if (res.ok) {
           const memo: Memo = await res.json();
@@ -72,8 +71,7 @@ export default function EditMemoPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
-      const res = await fetchWithAuth(`${apiUrl}/memos/${id}`, {
+      const res = await fetchWithAuth(`${API_URL}/memos/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

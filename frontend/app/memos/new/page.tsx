@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth, API_URL } from "@/lib/auth";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -32,8 +32,7 @@ export default function NewMemoPage() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
-      const res = await fetchWithAuth(`${apiUrl}/memos`, {
+      const res = await fetchWithAuth(`${API_URL}/memos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

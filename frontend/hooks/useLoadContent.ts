@@ -1,8 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth, API_URL } from "@/lib/auth";
 import { useEffect, useState } from "react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 export function useLoadContent<T>(url: string): [T | null, boolean] {
   const [loading, setLoading] = useState(true);
