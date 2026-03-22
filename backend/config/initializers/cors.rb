@@ -8,7 +8,18 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     # 環境変数から取得、デフォルトは localhost:8000
-    origins ENV.fetch("CORS_ALLOWED_ORIGINS", "localhost:8000,127.0.0.1:8000").split(",")
+    # 正規表現もサポート
+    origins_config = ENV.fetch("CORS_ALLOWED_ORIGINS", "localhost:8000,127.0.0.1:8000").split(",").map do |origin|
+      # 正規表現パターン（例: *.vercel.app）を処理
+      if origin.include?("*")
+        # * を .* に変換して正規表現化
+        Regexp.new(origin.gsub(".", "\\.").gsub("*", ".*"))
+      else
+        origin
+      end
+    end
+
+    origins(*origins_config)
 
     resource "*",
       headers: :any,
