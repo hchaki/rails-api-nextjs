@@ -14,7 +14,7 @@ class SessionsController < ApplicationController
         httponly: true,
         secure: Rails.env.production?,
         expires: REFRESH_TOKEN_EXPIRATION.from_now,
-        same_site: :none
+        same_site: :lax
       }
 
       render json: {

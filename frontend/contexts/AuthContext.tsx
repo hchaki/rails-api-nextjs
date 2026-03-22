@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
+const API_URL = "/api";
 
 interface User {
   id: number;
@@ -27,7 +27,7 @@ interface AuthContextType {
     password: string,
     passwordConfirmation: string,
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -111,9 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const logout = useCallback(() => {
-    removeToken();
-    setUser(null);
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_URL}/logout`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } finally {
+      removeToken();
+      setUser(null);
+    }
   }, []);
 
   return (
