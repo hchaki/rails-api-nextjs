@@ -18,6 +18,30 @@ class User < ApplicationRecord
     JWT.encode(payload, JWT_SECRET, JWT_ALGORITHM)
   end
 
+  # リフレッシュトークン生成
+  def generate_refresh_token
+    raw_token = SecureRandom.hex(32)
+    update!(
+      refresh_token_digest: Digest::SHA256.hexdigest(raw_token),
+      refresh_token_expires_at: 30.days.from_now
+    )
+    raw_token
+  end
+
+  # リフレッシュトークンからユーザーを検索
+  def self.find_by_refresh_token(token)
+    digest = Digest::SHA256.hexdigest(token)
+    user = find_by(refresh_token_digest: digest)
+    return nil unless user
+    return nil if user.refresh_token_expires_at < Time.current
+    user
+  end
+
+  # リフレッシュトークン無効化
+  def invalidate_refresh_token!
+    update!(refresh_token_digest: nil, refresh_token_expires_at: nil)
+  end
+
   # JWTトークンからユーザーを取得
   def self.decode_jwt(token)
     decode = JWT.decode(token, JWT_SECRET, true, { algorithm: JWT_ALGORITHM })

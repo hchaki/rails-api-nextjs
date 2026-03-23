@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   post '/login', to: 'sessions#create'
   get '/current_user', to: 'sessions#show'
   delete '/logout', to: 'sessions#destroy'
+  post '/refresh', to: 'sessions#refresh'
 
   resources :memos
 end

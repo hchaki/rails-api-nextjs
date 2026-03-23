@@ -1,3 +1,5 @@
+export const API_URL = "/api";
+
 const TOKEN_KEY = "auth_token";
 
 function hasWindow(): boolean {
@@ -25,12 +27,47 @@ export async function fetchWithAuth(
 ): Promise<Response> {
   const token = getToken();
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
+
+  // 401ならリフレッシュを試みる
+  if (response.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      // 新しいトークンで元のリクエストをリトライ
+      const newToken = getToken();
+      return fetch(url, {
+        ...options,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+          ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
+        },
+      });
+    }
+  }
+  return response;
+}
+
+async function tryRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/refresh`, {
+      method: "POST",
+      credentials: "include", // refresh_token Cookie を送る
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    setToken(data.token);
+    return true;
+  } catch {
+    return false;
+  }
 }

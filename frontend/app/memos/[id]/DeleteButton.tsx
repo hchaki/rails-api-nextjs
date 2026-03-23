@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/lib/auth";
+import { fetchWithAuth, API_URL } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Trash2Icon } from "lucide-react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3003";
 
 export default function DeleteButton({ memoId }: { memoId: number }) {
   const router = useRouter();
