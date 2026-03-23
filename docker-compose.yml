@@ -28,7 +28,7 @@ services:
     networks:
       default:
         aliases:
-          - api  # backサービスに「api」という別名を追加
+          - api # backサービスに「api」という別名を追加
   front:
     build:
       context: ./frontend/
@@ -42,6 +42,7 @@ services:
       - "8000:4000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3003
+      - BACKEND_URL=http://api:3000
     depends_on:
       - back
     networks:
